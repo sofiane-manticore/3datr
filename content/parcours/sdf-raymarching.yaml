@@ -1,0 +1,9 @@
+slug: sdf-raymarching
+titre: "SDF et raymarching"
+description: "Distance, primitives, opérations booléennes douces et raymarching."
+concepts:
+  - distance-signee
+  - primitives-sdf
+  - booleens-sdf
+  - smooth-min
+  - raymarching

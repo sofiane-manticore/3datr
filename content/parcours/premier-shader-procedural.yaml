@@ -1,0 +1,15 @@
+slug: premier-shader-procedural
+titre: "Mon premier shader procédural"
+description: "UV, Map Range, gradients, bruits, Color Ramp, masques et PBR."
+concepts:
+  - uv-mapping
+  - coordonnees-texture
+  - lerp
+  - map-range
+  - step-smoothstep
+  - value-noise
+  - gradient-noise
+  - fbm-octaves
+  - float-curve-color-ramp
+  - masques
+  - pbr-metal-roughness

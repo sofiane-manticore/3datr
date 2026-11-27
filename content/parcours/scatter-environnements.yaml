@@ -1,0 +1,9 @@
+slug: scatter-environnements
+titre: "Scatter et environnements"
+description: "Distribution, densité par masque, alignement aux normales et variation."
+concepts:
+  - distribution-points
+  - densite-par-masque
+  - blue-noise-poisson
+  - aligner-sur-vecteur
+  - variation-instances

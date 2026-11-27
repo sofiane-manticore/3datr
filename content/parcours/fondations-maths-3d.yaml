@@ -1,0 +1,12 @@
+slug: fondations-maths-3d
+titre: "Fondations maths 3D"
+description: "Vecteurs, produit scalaire, produit vectoriel, matrices et espaces de coordonnées."
+concepts:
+  - point-vecteur
+  - addition-vecteurs
+  - longueur-distance
+  - normalisation
+  - produit-scalaire
+  - produit-vectoriel
+  - matrices-transformation
+  - espaces-coordonnees

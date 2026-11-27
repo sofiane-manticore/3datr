@@ -1,0 +1,9 @@
+slug: vfx-temps-reel-unreal
+titre: "VFX temps réel dans Unreal"
+description: "Panner, flipbook, depth fade, World Position Offset et particules."
+concepts:
+  - panner-flowmap
+  - atlas-flipbook
+  - profondeur-depth-fade
+  - deformation-vertex
+  - particules

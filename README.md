@@ -10,7 +10,8 @@ En ligne : https://3datr.manticore-studio.fr
 apps/web        front React (Vite, TypeScript)
 apps/api        API Fastify, sert aussi apps/web/dist
 content/        concepts MDX, domaines, parcours
-packages/       code partagé (types, schémas, modules)
+packages/core   types et schémas Zod partagés
+packages/content  validation et compilation du contenu
 scripts/        scripts serveur (sync-content, embed…)
 ```
 
@@ -18,8 +19,12 @@ scripts/        scripts serveur (sync-content, embed…)
 
 ```
 pnpm install
-pnpm dev          # web sur :5173, API sur :3000
+pnpm dev               # compile le contenu, puis web sur :5173 et API sur :3000
+pnpm contenu:valider   # vérifie le dossier content/
+pnpm test
 ```
+
+Le format des fiches concept est décrit dans [content/README.md](content/README.md).
 
 Variables d'environnement de l'API : `MONGO_URL`, `MONGO_DB` (défaut `3datr`), `PORT` (défaut 3000).
 
