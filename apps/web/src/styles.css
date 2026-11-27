@@ -1,0 +1,12 @@
+:root {
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: #0d0f14;
+  color: #e6e8ee;
+}
+body { margin: 0; }
+.page { max-width: 640px; margin: 18vh auto 0; padding: 0 24px; }
+h1 { font-size: 3rem; letter-spacing: 0.04em; margin: 0 0 16px; }
+.lead { font-size: 1.25rem; line-height: 1.5; }
+.soon { color: #9aa3b5; }
+.status { margin-top: 48px; font-size: 0.85rem; color: #6b7385; }
