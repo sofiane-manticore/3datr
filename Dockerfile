@@ -18,7 +18,7 @@ ENV NODE_ENV=production PORT=3000 WEB_DIST=/app/web
 WORKDIR /app
 COPY --from=build /out/api ./api
 COPY --from=build /app/apps/api/dist ./api/dist
-COPY --from=build /app/apps/web/dist ./web
+COPY --from=build /app/apps/web/dist/client ./web
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD wget -qO- http://127.0.0.1:3000/api/health || exit 1

@@ -1,0 +1,84 @@
+## Intuition
+
+Imagine deux flèches posées au même endroit. Le produit scalaire répond à une seule question : **à quel point regardent-elles dans la même direction ?** Collées l'une à l'autre, la réponse vaut 1. À angle droit, 0. Dos à dos, −1.
+
+C'est comme une lampe torche braquée sur un mur : plus le faisceau arrive de face, plus la tache est lumineuse. Le produit scalaire mesure ce « de face » entre deux [[normalisation|directions normalisées]].
+
+## La formule
+
+Avec deux vecteurs $\col{rouge}{\vec a}$ et $\col{bleu}{\vec b}$, on multiplie les composantes une à une puis on additionne :
+
+$$
+\col{rouge}{\vec a} \cdot \col{bleu}{\vec b} = \col{rouge}{a_x}\,\col{bleu}{b_x} + \col{rouge}{a_y}\,\col{bleu}{b_y} + \col{rouge}{a_z}\,\col{bleu}{b_z} = \lVert\col{rouge}{\vec a}\rVert\,\lVert\col{bleu}{\vec b}\rVert\,\cos\col{vert}{\theta}
+$$
+
+Quand les deux vecteurs sont de longueur 1, il ne reste que $\cos\col{vert}{\theta}$ : le produit scalaire **est** le cosinus de l'angle $\col{vert}{\theta}$ entre eux.
+
+## Dans tes logiciels
+
+<Logiciels>
+<Logiciel id="gn" node="Vector Math › Dot Product">
+
+Ajoute un node **Vector Math**, passe-le en mode *Dot Product*. Branche la normale des faces dans A et la direction du haut dans B : le résultat vaut 1 sur les faces tournées vers le ciel.
+
+<NodeTree
+  nodes={[
+    { id: 'n', titre: 'Normal', categorie: 'entree', col: 0, sorties: ['Normal:vecteur'] },
+    { id: 'z', titre: 'Combine XYZ', categorie: 'convertisseur', col: 0, entrees: ['X', 'Y', 'Z'], sorties: ['Vector:vecteur'] },
+    { id: 'dot', titre: 'Vector Math', categorie: 'vecteur', col: 1, entrees: ['A:vecteur', 'B:vecteur'], sorties: ['Value'] },
+    { id: 'out', titre: 'Store Named Attribute', categorie: 'geometrie', col: 2, entrees: ['Geometry:geometrie', 'Value'], sorties: ['Geometry:geometrie'] },
+  ]}
+  liens={['n.Normal > dot.A', 'z.Vector > dot.B', 'dot.Value > out.Value']}
+  legende="Combine XYZ réglé sur (0, 0, 1) : l'axe du haut dans Blender."
+/>
+
+</Logiciel>
+<Logiciel id="blender-shader" node="Vector Math › Dot Product">
+
+Même node dans le Shader Editor. Avec **Geometry › Normal** en A, la sortie pilote directement un **Mix Shader** : neige en haut, roche ailleurs.
+
+</Logiciel>
+<Logiciel id="unreal-material" node="DotProduct">
+
+Le node s'appelle **DotProduct**. Attention, dans Unreal l'axe du haut est Z, comme dans Blender, mais l'unité est le centimètre.
+
+</Logiciel>
+<Logiciel id="code">
+
+```glsl
+float neige = dot(normalize(normal), vec3(0.0, 0.0, 1.0));
+neige = smoothstep(0.6, 0.8, neige);
+```
+
+```python
+from mathutils import Vector
+a = Vector((1, 0, 0))
+b = Vector((0.7, 0.7, 0)).normalized()
+print(a.dot(b))  # 0.707…
+```
+
+</Logiciel>
+</Logiciels>
+
+## Recettes
+
+### Neige sur le dessus des rochers
+
+Fais le produit scalaire entre la normale et l'axe du haut, puis passe le résultat dans un [[step-smoothstep|smoothstep]] pour obtenir une limite nette mais douce. Ce masque mélange les deux matériaux.
+
+### Liseré face à la caméra
+
+Le produit scalaire entre la normale et la direction de la vue vaut presque 0 sur les bords de l'objet. Inverse-le et tu obtiens un contour lumineux, la base du [[fresnel]].
+
+## Pièges courants
+
+- **Vecteurs non normalisés** : le résultat dépasse 1 et dépend de la taille de l'objet. Normalise les deux entrées avant.
+- **Axe du haut** : Blender et Unreal utilisent Z, beaucoup de moteurs et de logiciels utilisent Y. Une neige qui tombe sur le côté vient souvent de là.
+
+<Encadre type="astuce">
+Un résultat négatif n'est pas une erreur : il dit que les deux directions s'opposent. Utilise **Clamp** ou `max(0, …)` si tu n'en veux pas.
+</Encadre>
+
+## Mini-défi
+
+Dans le module, oriente les deux flèches pour obtenir un produit scalaire **nul**. Que remarques-tu sur l'angle entre elles ?

@@ -4,3 +4,4 @@ dist
 *.log
 apps/web/public/data/
 *.tsbuildinfo
+.react-router

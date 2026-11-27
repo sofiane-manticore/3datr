@@ -47,6 +47,51 @@ Un **brouillon** n'exige que l'identité (slug, titre, domaine, chapitre, niveau
 Pour passer en **publie**, il faut en plus : `resume`, une `description` de 150 à 300 mots,
 5 à 10 `questions`, au moins un `synonyme` et un `module` enregistré.
 
+## Corps du texte : les sections de la page
+
+Toutes les pages concept suivent le même ordre de 9 sections. Trois sont générées par le
+gabarit (en-tête, module interactif, « Pour aller plus loin »). Les six autres s'écrivent
+dans le corps MDX, chacune sous un titre `##` exact, dans cet ordre :
+
+| Titre dans le MDX | Contenu attendu |
+| --- | --- |
+| `## Intuition` | deux ou trois phrases et une analogie visuelle, sans formule |
+| `## La formule` | la formule KaTeX, chaque variable dans la couleur de son curseur (optionnelle) |
+| `## Dans tes logiciels` | un onglet par logiciel : nom exact du node, node tree minimal, extrait de code |
+| `## Recettes` | deux ou trois usages concrets en production (titres `###`) |
+| `## Pièges courants` | erreurs fréquentes et comment les reconnaître |
+| `## Mini-défi` | un objectif à atteindre dans le module (optionnelle) |
+
+Le texte commence directement par `## Intuition`. Un titre inconnu, un doublon ou un désordre
+bloque la validation. Une section absente d'un brouillon s'affiche « à rédiger ».
+Exemple complet : `apps/web/src/exemple/produit-scalaire.mdx`, visible sur `/gabarit`.
+
+Ce qu'on peut écrire dans le texte :
+
+- **Formules** : `$…$` dans la ligne, `$$…$$` en bloc. `\col{rouge}{a}` colore une variable
+  (rouge, orange, jaune, vert, bleu, violet, rose), avec la même teinte que le curseur du module.
+- **Liens** : `[[slug]]` ou `[[slug|texte]]`, avec pastille du domaine et bulle de résumé.
+- **Onglets logiciels** :
+
+  ```mdx
+  <Logiciels>
+  <Logiciel id="gn" node="Vector Math › Dot Product">
+
+  Texte, schéma, code…
+
+  </Logiciel>
+  <Logiciel id="code">…</Logiciel>
+  </Logiciels>
+  ```
+
+  `id` : `gn`, `blender-shader`, `unreal-material` ou `code`. L'onglet choisi est mémorisé d'une page à l'autre.
+- **Node tree** : `<NodeTree nodes={[…]} liens={['a.Sortie > b.Entrée']} legende="…" />`, voir
+  `apps/web/src/concept/NodeTree.tsx` pour le format des nodes et des sockets.
+- **Code** : blocs ```` ```glsl ````, `hlsl`, `python`, `csharp`, `cpp`, `typescript`… colorés au build.
+- **Encadré** : `<Encadre type="astuce|attention|info" titre="…">…</Encadre>`.
+
+Attention, c'est du MDX : `{` et `<` dans le texte ordinaire s'écrivent `\{` et `&lt;`.
+
 ## Liens entre concepts
 
 | Type | Où l'écrire | Sur la carte |
@@ -63,6 +108,7 @@ Pour passer en **publie**, il faut en plus : `resume`, une `description` de 150 
 - un en-tête ne respecte pas le schéma, ou le fichier est mal nommé ou mal rangé ;
 - un slug cité (prérequis, suites, alternatives, `[[…]]`, parcours) n'existe pas ;
 - les prérequis et suites forment une boucle ;
+- les sections `##` du texte sont inconnues, en double ou dans le désordre ;
 - le `module` déclaré n'existe pas dans `apps/web/src/modules/` (`<Nom>.tsx` ou `<Nom>/index.tsx`) ;
 - un concept `publie` n'a pas ses champs de recherche ou son module.
 

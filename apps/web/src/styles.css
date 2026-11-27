@@ -1,12 +1,217 @@
-:root {
+@import 'tailwindcss';
+
+/* Le contenu MDX vit hors de apps/web : Tailwind doit aussi y chercher des classes. */
+@source '../../../content';
+
+/* Jetons de couleur : thème sombre par défaut, thème clair sur data-theme="clair". */
+:root,
+[data-theme='sombre'] {
+  --fond: #0f1115;
+  --surface: #171a21;
+  --surface-2: #1f232c;
+  --bord: #2b303b;
+  --texte: #e8eaef;
+  --doux: #9aa2b1;
+  --accent: #7c9cff;
+  --attention: #f5a524;
+  /* Couleurs des variables (curseurs du module et formule) */
+  --v-rouge: #ff6b6b;
+  --v-orange: #ff9f43;
+  --v-jaune: #ffd43b;
+  --v-vert: #51cf66;
+  --v-bleu: #4dabf7;
+  --v-violet: #b197fc;
+  --v-rose: #f783ac;
   color-scheme: dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  background: #0d0f14;
-  color: #e6e8ee;
 }
-body { margin: 0; }
-.page { max-width: 640px; margin: 18vh auto 0; padding: 0 24px; }
-h1 { font-size: 3rem; letter-spacing: 0.04em; margin: 0 0 16px; }
-.lead { font-size: 1.25rem; line-height: 1.5; }
-.soon { color: #9aa3b5; }
-.status { margin-top: 48px; font-size: 0.85rem; color: #6b7385; }
+
+[data-theme='clair'] {
+  --fond: #fbfbfc;
+  --surface: #f1f2f5;
+  --surface-2: #e7e9ee;
+  --bord: #d5d9e0;
+  --texte: #161a22;
+  --doux: #555e6e;
+  --accent: #3858d6;
+  --attention: #b45309;
+  --v-rouge: #d6336c;
+  --v-orange: #d9480f;
+  --v-jaune: #a07d00;
+  --v-vert: #2b8a3e;
+  --v-bleu: #1c7ed6;
+  --v-violet: #7048e8;
+  --v-rose: #c2255c;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-fond: var(--fond);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-bord: var(--bord);
+  --color-texte: var(--texte);
+  --color-doux: var(--doux);
+  --color-accent: var(--accent);
+  --color-attention: var(--attention);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+
+html {
+  background: var(--fond);
+  color: var(--texte);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--fond);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  min-height: 100dvh;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Ancres : laisser la place à l'en-tête collant. */
+[id] {
+  scroll-margin-top: 4.5rem;
+}
+
+/* ---------- Texte rédigé (corps MDX) ---------- */
+.prose-3datr {
+  font-size: 1.0625rem;
+  overflow-wrap: break-word;
+}
+.prose-3datr > * + * {
+  margin-top: 1em;
+}
+.prose-3datr h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 1.6em;
+}
+.prose-3datr h4 {
+  font-weight: 600;
+  margin-top: 1.4em;
+}
+.prose-3datr a:not(.lien-concept) {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-3datr strong {
+  font-weight: 650;
+}
+.prose-3datr ul {
+  list-style: disc;
+  padding-left: 1.4em;
+}
+.prose-3datr ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+}
+.prose-3datr li + li {
+  margin-top: 0.35em;
+}
+.prose-3datr li::marker {
+  color: var(--doux);
+}
+.prose-3datr blockquote {
+  border-left: 3px solid var(--bord);
+  padding-left: 1em;
+  color: var(--doux);
+}
+.prose-3datr :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--surface-2);
+  border: 1px solid var(--bord);
+  border-radius: 0.35rem;
+  padding: 0.08em 0.35em;
+}
+.prose-3datr table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+.prose-3datr th,
+.prose-3datr td {
+  border: 1px solid var(--bord);
+  padding: 0.4em 0.7em;
+  text-align: left;
+}
+.prose-3datr th {
+  background: var(--surface);
+  font-weight: 600;
+}
+
+/* ---------- Code (Shiki, deux thèmes) ---------- */
+.prose-3datr pre {
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  border: 1px solid var(--bord);
+  border-radius: 0.6rem;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  background: var(--surface) !important;
+}
+.shiki span {
+  color: var(--shiki-dark);
+}
+[data-theme='clair'] .shiki span {
+  color: var(--shiki-light);
+}
+
+/* ---------- Formules (KaTeX) ---------- */
+.katex-display {
+  position: relative; /* contient le MathML masqué, sinon il élargit la page sur mobile */
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.75rem 0.25rem;
+  margin: 0 !important;
+}
+.prose-3datr .katex-display {
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: 0.6rem;
+  font-size: 1.15em;
+}
+.katex {
+  position: relative;
+}
+.v-rouge { color: var(--v-rouge); }
+.v-orange { color: var(--v-orange); }
+.v-jaune { color: var(--v-jaune); }
+.v-vert { color: var(--v-vert); }
+.v-bleu { color: var(--v-bleu); }
+.v-violet { color: var(--v-violet); }
+.v-rose { color: var(--v-rose); }
+
+/* ---------- Fond quadrillé des zones 3D ---------- */
+.fond-grille {
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(var(--bord) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bord) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
