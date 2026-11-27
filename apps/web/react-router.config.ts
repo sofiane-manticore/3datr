@@ -1,5 +1,5 @@
 import type { Config } from '@react-router/dev/config'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 /**
@@ -14,6 +14,16 @@ export default {
     const catalogue = JSON.parse(readFileSync(join(import.meta.dirname, 'public/data/catalog.json'), 'utf8')) as {
       concepts: { slug: string }[]
     }
-    return ['/', '/concepts', '/gabarit', ...catalogue.concepts.map((c) => `/concepts/${c.slug}`)]
+    const modules = readdirSync(join(import.meta.dirname, 'src/modules'), { withFileTypes: true })
+      .map((f) => (f.isDirectory() ? f.name : f.name.replace(/\.tsx$/, '')))
+      .filter((n) => /^[A-Z]/.test(n))
+    return [
+      '/',
+      '/concepts',
+      '/gabarit',
+      '/labo',
+      ...modules.map((m) => `/labo/${m}`),
+      ...catalogue.concepts.map((c) => `/concepts/${c.slug}`),
+    ]
   },
 } satisfies Config

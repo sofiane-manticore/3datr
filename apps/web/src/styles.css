@@ -215,3 +215,82 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- Curseurs des modules (couleur de la variable dans --c, remplissage dans --p) ---------- */
+.curseur {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 1.25rem;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.curseur::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--c) var(--p), var(--surface-2) var(--p));
+}
+.curseur::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--c) var(--p), var(--surface-2) var(--p));
+}
+.curseur::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  margin-top: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--c);
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--c);
+}
+.curseur::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c);
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--c);
+}
+.curseur:focus-visible {
+  outline: none;
+}
+.curseur:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 1px var(--c), 0 0 0 4px color-mix(in srgb, var(--c) 35%, transparent);
+}
+
+/* ---------- Mini éditeur de nodes (React Flow aux couleurs du site) ---------- */
+.editeur-nodes .react-flow {
+  --xy-background-color: transparent;
+  --xy-node-border-radius: 6px;
+  --xy-edge-stroke-selected: var(--accent);
+  --xy-selection-background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+  --xy-selection-border: 1px solid var(--accent);
+  font-family: var(--font-sans);
+  color: var(--texte);
+}
+.editeur-nodes .react-flow__node {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--texte);
+}
+.editeur-nodes .socket {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #1b1b1b;
+}
+.editeur-nodes .react-flow__handle-left {
+  left: -5px;
+}
+.editeur-nodes .react-flow__handle-right {
+  right: -5px;
+}
+.editeur-nodes .react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 3;
+}
+.formule-live .katex {
+  font-size: 1.05em;
+}

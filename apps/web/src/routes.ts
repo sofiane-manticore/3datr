@@ -5,4 +5,6 @@ export default [
   route('concepts', 'routes/liste.tsx'),
   route('concepts/:slug', 'routes/concept.tsx'),
   route('gabarit', 'routes/gabarit.tsx'),
+  route('labo', 'routes/labo.tsx'),
+  route('labo/:id', 'routes/labo-module.tsx'),
 ] satisfies RouteConfig

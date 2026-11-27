@@ -16,7 +16,7 @@
  * `col` place le node dans une colonne (par défaut, une colonne par node).
  */
 
-const COULEURS_SOCKETS: Record<string, string> = {
+export const COULEURS_SOCKETS: Record<string, string> = {
   float: '#a1a1a1',
   vecteur: '#6363c7',
   couleur: '#c7c729',
@@ -28,7 +28,7 @@ const COULEURS_SOCKETS: Record<string, string> = {
   texte: '#6c8cbf',
 }
 
-const COULEURS_CATEGORIES: Record<string, string> = {
+export const COULEURS_CATEGORIES: Record<string, string> = {
   entree: '#83314a',
   vecteur: '#3c3c83',
   math: '#246283',
