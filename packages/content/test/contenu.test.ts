@@ -31,6 +31,24 @@ const brut = (concepts: FichierConcept[], parcours: ContenuBrut['parcours'] = []
 const messages = (r: { erreurs: { message: string }[] }) => r.erreurs.map((e) => e.message)
 
 describe('validation', () => {
+  it('vérifie les sections du texte : connues, uniques, dans l’ordre', () => {
+    const ok = validerContenu(brut([concept('a', {}, '## Intuition\n\nx\n\n## La formule\n\ny\n\n## Pièges courants\n\nz\n'), concept('b', { prerequis: ['a'] })]))
+    expect(ok.erreurs).toEqual([])
+    const r = validerContenu(
+      brut([
+        concept('a', {}, 'Avant.\n\n## Intuition\n\nx\n\n## Bonus\n\n## Recettes\n\n## La formule\n\n## Recettes\n\n```md\n## Dans un bloc de code\n```\n'),
+        concept('b', { prerequis: ['a'] }),
+      ]),
+    )
+    const m = messages(r)
+    expect(m.some((x) => x.includes('du texte précède la première section'))).toBe(true)
+    expect(m.some((x) => x.includes('section inconnue « Bonus »'))).toBe(true)
+    expect(m.some((x) => x.includes('« La formule » mal placée'))).toBe(true)
+    expect(m.some((x) => x.includes('« Recettes » en double'))).toBe(true)
+    expect(m.some((x) => x.includes('Dans un bloc'))).toBe(false)
+  })
+
+
   it('accepte un brouillon minimal relié', () => {
     const r = validerContenu(brut([concept('a'), concept('b', { prerequis: ['a'] })]))
     expect(r.erreurs).toEqual([])

@@ -8,6 +8,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./sections": {
+      "types": "./dist/sections.d.ts",
+      "default": "./dist/sections.js"
+    },
+    "./liens": {
+      "types": "./dist/liens.d.ts",
+      "default": "./dist/liens.js"
     }
   },
   "scripts": {

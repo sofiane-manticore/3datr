@@ -3,20 +3,44 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "typecheck": "tsc -b"
+    "dev": "react-router dev",
+    "build": "react-router build",
+    "typecheck": "react-router typegen && tsc",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@react-router/node": "^7.18.7",
+    "isbot": "^5.2.4",
+    "katex": "^0.16.47",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-router": "^7.18.7"
   },
   "devDependencies": {
     "@3datr/content": "workspace:*",
+    "@3datr/core": "workspace:*",
+    "@mdx-js/mdx": "^3.1.1",
+    "@mdx-js/rollup": "^3.1.1",
+    "@react-router/dev": "^7.18.7",
+    "@shikijs/rehype": "^4.6.0",
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/hast": "^3.0.5",
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^22.20.7",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
-    "@vitejs/plugin-react": "^4.5.0",
+    "mdast-util-mdx": "^3.0.0",
+    "mdast-util-mdx-jsx": "^3.2.2",
+    "rehype-katex": "^7.0.1",
+    "remark-frontmatter": "^5.0.0",
+    "remark-math": "^6.0.0",
+    "shiki": "^4.6.0",
+    "tailwindcss": "^4.3.5",
     "typescript": "~5.8.3",
-    "vite": "^6.3.5"
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.2.0",
+    "vfile": "^6.0.3",
+    "vite": "^6.3.5",
+    "vitest": "^5.1.2"
   }
 }

@@ -7,6 +7,7 @@ import {
   extraireCitations,
   parcoursSchema,
   trouverCycles,
+  verifierSections,
   type Chapitre,
   type Domaine,
   type EnTeteConcept,
@@ -117,6 +118,7 @@ export function validerContenu(brut: ContenuBrut, options: OptionsValidation = {
       err(f.fichier, `slug déjà utilisé par ${parSlug.get(c.slug)!.fichier}`)
       continue
     }
+    for (const p of verifierSections(f.corps).problemes) err(f.fichier, `ligne ${p.ligne} du texte : ${p.message}`)
     const cv: ConceptValide = { ...c, fichier: f.fichier, hash: f.hash, corps: f.corps, cites: extraireCitations(f.corps) }
     concepts.push(cv)
     parSlug.set(c.slug, cv)
