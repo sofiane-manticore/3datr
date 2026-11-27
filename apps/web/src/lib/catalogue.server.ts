@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Catalogue, ConceptCompile } from '@3datr/core'
+import type { Catalogue, ConceptCompile, Graphe } from '@3datr/core'
 import type { Apercu, DonneesConcept } from './types'
 
 let cache: Catalogue | null = null
@@ -9,6 +9,14 @@ let cache: Catalogue | null = null
 export function lireCatalogue(): Catalogue {
   cache ??= JSON.parse(readFileSync(join(process.cwd(), 'public/data/catalog.json'), 'utf8')) as Catalogue
   return cache
+}
+
+let cacheGraphe: Graphe | null = null
+
+/** graph.json : positions des concepts sur la carte et liens typés. */
+export function lireGraphe(): Graphe {
+  cacheGraphe ??= JSON.parse(readFileSync(join(process.cwd(), 'public/data/graph.json'), 'utf8')) as Graphe
+  return cacheGraphe
 }
 
 export function apercu(c: ConceptCompile, cat = lireCatalogue()): Apercu {

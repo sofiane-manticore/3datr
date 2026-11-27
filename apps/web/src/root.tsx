@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link, Links, Meta, Outlet, Scripts, ScrollRestoration, isRouteErrorResponse } from 'react-router'
+import { Link, Links, Meta, NavLink, Outlet, Scripts, ScrollRestoration, isRouteErrorResponse, useMatches } from 'react-router'
 import type { Route } from './+types/root'
 import { BoutonTheme, SCRIPT_THEME } from './composants/theme'
 import './styles.css'
@@ -12,7 +12,12 @@ export const meta: Route.MetaFunction = () => [
   },
 ]
 
+const lienNav = ({ isActive }: { isActive: boolean }) =>
+  `rounded px-2 py-1 hover:bg-surface hover:text-texte ${isActive ? 'text-texte' : ''}`
+
 export function Layout({ children }: { children: ReactNode }) {
+  // La carte occupe tout l'écran : pas de pied de page dessous.
+  const pleinEcran = useMatches().some((m) => (m.handle as { pleinEcran?: boolean } | undefined)?.pleinEcran)
   return (
     <html lang="fr" data-theme="sombre" suppressHydrationWarning>
       <head>
@@ -27,22 +32,25 @@ export function Layout({ children }: { children: ReactNode }) {
         <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded focus:bg-surface focus:px-3 focus:py-2">
           Aller au contenu
         </a>
-        <header className="sticky top-0 z-30 border-b border-bord bg-fond/85 backdrop-blur">
-          <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
+        <header className="sticky top-0 z-30 h-14 border-b border-bord bg-fond/85 backdrop-blur">
+          <div className={`mx-auto flex h-full items-center gap-4 px-4 ${pleinEcran ? '' : 'max-w-6xl'}`}>
             <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
               <Logo />
               <span>3DATR</span>
             </Link>
             <nav className="ml-auto flex items-center gap-1 text-sm text-doux">
-              <Link to="/" className="rounded px-2 py-1 hover:bg-surface hover:text-texte">
-                Concepts
-              </Link>
+              <NavLink to="/" end className={lienNav}>
+                Carte
+              </NavLink>
+              <NavLink to="/concepts" end className={lienNav}>
+                Liste
+              </NavLink>
               <BoutonTheme />
             </nav>
           </div>
         </header>
         <div id="contenu">{children}</div>
-        <footer className="mt-24 border-t border-bord">
+        <footer className={`mt-24 border-t border-bord ${pleinEcran ? 'hidden' : ''}`}>
           <div className="mx-auto max-w-6xl px-4 py-6 text-xs text-doux">
             3DATR · 3D Artist Tools Reminder · les maths et techniques des artistes 3D, un module interactif par concept.
           </div>

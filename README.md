@@ -29,6 +29,13 @@ Le format des fiches concept est décrit dans [content/README.md](content/README
 
 Variables d'environnement de l'API : `MONGO_URL`, `MONGO_DB` (défaut `3datr`), `PORT` (défaut 3000).
 
+## Carte des concepts
+
+L'accueil (`/`) est une constellation : un canevas infini (glisser, molette, pincer) où chaque domaine forme un amas
+coloré. Les positions viennent de `graph.json` (calculées par `pnpm contenu:compiler`, les domaines liés se rapprochent).
+Survoler un concept allume le chemin de ses prérequis ; cliquer ouvre sa fiche. Le code vit dans `apps/web/src/carte/`.
+La liste texte des concepts est sur `/concepts`.
+
 ## Pages concept
 
 `pnpm build` pré-rend une page HTML par concept (`/concepts/<slug>`), avec ses données en `.data`.

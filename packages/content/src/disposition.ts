@@ -32,13 +32,9 @@ export function disposer(
   domaines: string[],
   noeuds: NoeudADisposer[],
   liens: { from: string; to: string }[],
-  rayonCarte = 900,
+  rayonCarte = 700,
 ): Disposition {
-  const centres = new Map<string, { x: number; y: number }>()
-  domaines.forEach((d, i) => {
-    const a = (i / domaines.length) * Math.PI * 2 - Math.PI / 2
-    centres.set(d, { x: arrondi(rayonCarte * Math.cos(a)), y: arrondi(rayonCarte * Math.sin(a)) })
-  })
+  const centres = placerDomaines(domaines, noeuds, liens, rayonCarte)
 
   const rangDansDomaine = new Map<string, number>()
   const sim: NoeudSim[] = noeuds.map((n) => {
@@ -69,4 +65,57 @@ export function disposer(
 
   const positions = new Map(sim.map((n) => [n.slug, { x: arrondi(n.x ?? 0), y: arrondi(n.y ?? 0) }]))
   return { centres, positions }
+}
+
+interface DomaineSim extends SimulationNodeDatum {
+  slug: string
+  rayon: number
+}
+
+/**
+ * Place les centres des domaines : les domaines très liés entre eux (vecteurs et
+ * transformations, bruits et SDF…) se rapprochent, sans que les îles se chevauchent.
+ * On part d'un cercle (déterministe) et on laisse les forces resserrer la constellation.
+ */
+function placerDomaines(
+  domaines: string[],
+  noeuds: NoeudADisposer[],
+  liens: { from: string; to: string }[],
+  rayonDepart: number,
+): Map<string, { x: number; y: number }> {
+  const domaineDe = new Map(noeuds.map((n) => [n.slug, n.domaine]))
+  const taille = new Map<string, number>()
+  for (const n of noeuds) taille.set(n.domaine, (taille.get(n.domaine) ?? 0) + 1)
+  const sim: DomaineSim[] = domaines.map((slug, i) => {
+    const a = (i / domaines.length) * Math.PI * 2 - Math.PI / 2
+    return { slug, rayon: 30 + 26 * Math.sqrt(taille.get(slug) ?? 1), x: rayonDepart * Math.cos(a), y: rayonDepart * Math.sin(a) }
+  })
+  const index = new Map(sim.map((d) => [d.slug, d]))
+  const comptes = new Map<string, number>()
+  for (const l of liens) {
+    const a = domaineDe.get(l.from)
+    const b = domaineDe.get(l.to)
+    if (!a || !b || a === b) continue
+    const k = a < b ? `${a}|${b}` : `${b}|${a}`
+    comptes.set(k, (comptes.get(k) ?? 0) + 1)
+  }
+  const max = Math.max(1, ...comptes.values())
+  const liensSim = [...comptes.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([k, n]) => {
+    const [a, b] = k.split('|') as [string, string]
+    return { source: index.get(a)!, target: index.get(b)!, n }
+  })
+  forceSimulation(sim)
+    .force(
+      'liens',
+      forceLink<DomaineSim, { source: DomaineSim; target: DomaineSim; n: number }>(liensSim)
+        .distance((l) => l.source.rayon + l.target.rayon + 40)
+        .strength((l) => 0.05 + 0.5 * (l.n / max)),
+    )
+    .force('repulsion', forceManyBody<DomaineSim>().strength(-300))
+    .force('collision', forceCollide<DomaineSim>((d) => d.rayon + 100).strength(1).iterations(4))
+    .force('x', forceX<DomaineSim>(0).strength(0.06))
+    .force('y', forceY<DomaineSim>(0).strength(0.06))
+    .stop()
+    .tick(500)
+  return new Map(sim.map((d) => [d.slug, { x: arrondi(d.x ?? 0), y: arrondi(d.y ?? 0) }]))
 }
