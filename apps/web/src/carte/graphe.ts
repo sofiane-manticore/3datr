@@ -14,7 +14,19 @@ export interface GrapheCarte {
   rayons: Map<string, number>
   /** Barycentre réel des concepts de chaque domaine. */
   centres: Map<string, { x: number; y: number }>
+  /** Cadre de chaque domaine (rectangle englobant ses concepts, marge comprise). */
+  cadres: Map<string, Cadre>
 }
+
+export interface Cadre {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
+
+/** Marge autour des concepts d'un domaine, en unités de la carte. */
+export const MARGE_CADRE = 34
 
 export function indexerGraphe(g: Pick<Graphe, 'noeuds' | 'liens' | 'domaines'>): GrapheCarte {
   const parSlug = new Map(g.noeuds.map((n) => [n.slug, n]))
@@ -34,19 +46,27 @@ export function indexerGraphe(g: Pick<Graphe, 'noeuds' | 'liens' | 'domaines'>):
   }
   const centres = new Map<string, { x: number; y: number }>()
   const rayons = new Map<string, number>()
+  const cadres = new Map<string, Cadre>()
   for (const d of g.domaines) {
     const ns = g.noeuds.filter((n) => n.domaine === d.slug)
     if (ns.length === 0) {
       centres.set(d.slug, { x: d.x, y: d.y })
       rayons.set(d.slug, 60)
+      cadres.set(d.slug, { minX: d.x - 60, minY: d.y - 60, maxX: d.x + 60, maxY: d.y + 60 })
       continue
     }
+    cadres.set(d.slug, {
+      minX: Math.min(...ns.map((n) => n.x)) - MARGE_CADRE,
+      minY: Math.min(...ns.map((n) => n.y)) - MARGE_CADRE,
+      maxX: Math.max(...ns.map((n) => n.x)) + MARGE_CADRE,
+      maxY: Math.max(...ns.map((n) => n.y)) + MARGE_CADRE,
+    })
     const cx = ns.reduce((s, n) => s + n.x, 0) / ns.length
     const cy = ns.reduce((s, n) => s + n.y, 0) / ns.length
     centres.set(d.slug, { x: cx, y: cy })
     rayons.set(d.slug, Math.max(60, ...ns.map((n) => Math.hypot(n.x - cx, n.y - cy))) + 40)
   }
-  return { noeuds: g.noeuds, liens: g.liens, domaines: g.domaines, parSlug, prerequis, suites, rayons, centres }
+  return { noeuds: g.noeuds, liens: g.liens, domaines: g.domaines, parSlug, prerequis, suites, rayons, centres, cadres }
 }
 
 /** Tous les prérequis, directs et indirects : le chemin à parcourir pour arriver à ce concept. */
@@ -63,7 +83,7 @@ export function ancetres(g: GrapheCarte, slug: string): Set<string> {
 }
 
 /** Rayon d'un nœud en unités de la carte : les concepts dont beaucoup dépendent sont plus gros. */
-export const rayonNoeud = (n: Pick<NoeudGraphe, 'poids'>) => 5 + Math.sqrt(n.poids) * 3
+export const rayonNoeud = (n: Pick<NoeudGraphe, 'poids'>) => 4 + Math.sqrt(n.poids) * 2.2
 
 /** Recherche tolérante aux accents et à la casse, les titres qui commencent par la requête d'abord. */
 export function rechercher(noeuds: NoeudGraphe[], requete: string, max = 8): NoeudGraphe[] {

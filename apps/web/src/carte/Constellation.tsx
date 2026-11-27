@@ -173,6 +173,7 @@ export function Constellation({ donnees }: { donnees: DonneesCarte }) {
     (slug: string) => {
       const e = etat.current
       if (!e) return
+      setSelection(null)
       const ns = g.noeuds.filter((n) => n.domaine === slug)
       voler(cadrer(boite(ns), e.largeur, e.hauteur, 90))
     },

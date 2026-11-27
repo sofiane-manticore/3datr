@@ -173,8 +173,12 @@ function Legende({ g, onDomaine, onSurvolDomaine, domaineSurvole }: Props) {
           alternative
         </div>
         <div className="flex items-center gap-2">
-          <svg width="26" height="10" aria-hidden="true"><circle cx="13" cy="5" r="4" fill="currentColor" /><circle cx="13" cy="5" r="1.8" fill="#fff" /></svg>
-          concept déjà vu
+          <svg width="26" height="12" aria-hidden="true"><circle cx="13" cy="6" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.6" /></svg>
+          à découvrir
+        </div>
+        <div className="flex items-center gap-2">
+          <svg width="26" height="12" aria-hidden="true"><circle cx="13" cy="6" r="5.5" fill="currentColor" /><path d="m10.6 6.1 1.6 1.6 3.2-3.3" fill="none" stroke="var(--fond)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          déjà vu
         </div>
       </div>
       <Link to="/concepts" className="mt-1 block px-1.5 py-1 text-xs text-doux underline-offset-4 hover:text-texte hover:underline">
