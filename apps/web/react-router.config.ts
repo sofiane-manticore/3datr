@@ -14,6 +14,6 @@ export default {
     const catalogue = JSON.parse(readFileSync(join(import.meta.dirname, 'public/data/catalog.json'), 'utf8')) as {
       concepts: { slug: string }[]
     }
-    return ['/', '/gabarit', ...catalogue.concepts.map((c) => `/concepts/${c.slug}`)]
+    return ['/', '/concepts', '/gabarit', ...catalogue.concepts.map((c) => `/concepts/${c.slug}`)]
   },
 } satisfies Config

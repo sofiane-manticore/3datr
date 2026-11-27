@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@react-router/node": "^7.18.7",
+    "d3-force": "^3.0.1",
     "isbot": "^5.2.4",
     "katex": "^0.16.47",
     "react": "^19.1.0",
@@ -24,6 +25,7 @@
     "@react-router/dev": "^7.18.7",
     "@shikijs/rehype": "^4.6.0",
     "@tailwindcss/vite": "^4.3.5",
+    "@types/d3-force": "^3.0.10",
     "@types/hast": "^3.0.5",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.20.7",
