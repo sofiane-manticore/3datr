@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router'
 import type { Graphe, NoeudGraphe } from '@3datr/core'
 import { useVus } from '../lib/progression'
 import { type Camera, cadrer, interpoler, versCarte, zoomerAutour } from './camera'
-import { type EtatDessin, type Focus, dessiner, lirePalette } from './dessin'
-import { ancetres, indexerGraphe, rayonNoeud } from './graphe'
+import { type EtatDessin, type Focus, dessiner, lirePalette, sousLePoint } from './dessin'
+import { type DispositionCarte, disposerCarte } from './disposition'
+import { ancetres, indexerGraphe } from './graphe'
 import { Interface } from './Interface'
 
 const CLE_CAMERA = '3datr-camera'
@@ -13,10 +14,24 @@ export type DonneesCarte = Pick<Graphe, 'noeuds' | 'liens' | 'domaines'>
 
 /**
  * La carte des concepts : un canevas infini où l'on se déplace (glisser, molette, pincer).
- * Chaque domaine forme un amas coloré ; survoler un concept allume tout le chemin de ses prérequis.
+ * Chaque domaine est une carte mentale ; survoler un concept montre tout le chemin de ses prérequis.
  */
 export function Constellation({ donnees }: { donnees: DonneesCarte }) {
-  const g = useMemo(() => indexerGraphe(donnees), [donnees])
+  // La disposition mesure le texte : elle se calcule dans le navigateur seulement.
+  const disposition = useMemo<DispositionCarte | null>(() => {
+    if (typeof document === 'undefined') return null
+    const ctx = document.createElement('canvas').getContext('2d')!
+    const mesure = (t: string, police: string) => {
+      ctx.font = police
+      return ctx.measureText(t).width
+    }
+    return disposerCarte(donnees, mesure, getComputedStyle(document.body).fontFamily || 'system-ui, sans-serif')
+  }, [donnees])
+  const g = useMemo(() => {
+    if (!disposition) return indexerGraphe(donnees)
+    const noeuds = donnees.noeuds.map((n) => ({ ...n, ...pos(disposition, n.slug, n) }))
+    return indexerGraphe({ ...donnees, noeuds })
+  }, [donnees, disposition])
   const navigate = useNavigate()
   const vus = useVus()
   const conteneur = useRef<HTMLDivElement>(null)
@@ -41,10 +56,11 @@ export function Constellation({ donnees }: { donnees: DonneesCarte }) {
   const image = useRef(0)
   const demanderDessin = useRef<() => void>(() => {})
 
-  const boiteTout = useMemo(() => boite(g.noeuds), [g])
+  const boiteTout = useMemo(() => (disposition ? union([...disposition.zones.values()]) : boite(g.noeuds)), [g, disposition])
 
   // Mise en place : taille, thème, première caméra (celle de la dernière visite si elle existe).
   useEffect(() => {
+    if (!disposition) return
     const cv = canvas.current!
     const ct = conteneur.current!
     const ctx = cv.getContext('2d')!
@@ -63,6 +79,7 @@ export function Constellation({ donnees }: { donnees: DonneesCarte }) {
       hauteur: r.height,
       dpr: window.devicePixelRatio || 1,
       palette: lirePalette(),
+      disposition,
       focus: null,
       domaineSurvole: null,
       vus: new Set(),
@@ -91,8 +108,6 @@ export function Constellation({ donnees }: { donnees: DonneesCarte }) {
       }
       dessiner(ctx, g, e)
       setZoom((z) => (Math.abs(z - e.camera.k) > 0.01 ? e.camera.k : z))
-      // Le chemin allumé « coule » : on continue d'animer tant qu'un concept est vise.
-      if (e.focus && !e.mouvementReduit) encore = true
       if (encore) image.current = requestAnimationFrame(boucle)
       else {
         enCours = false
@@ -137,7 +152,7 @@ export function Constellation({ donnees }: { donnees: DonneesCarte }) {
       mo.disconnect()
       cancelAnimationFrame(image.current)
     }
-  }, [g, boiteTout])
+  }, [g, boiteTout, disposition])
 
   useEffect(() => {
     if (!etat.current) return
@@ -164,7 +179,7 @@ export function Constellation({ donnees }: { donnees: DonneesCarte }) {
       const e = etat.current
       if (!n || !e) return
       setSelection(slug)
-      voler({ x: n.x, y: n.y, k: Math.max(e.camera.k, 1.6) })
+      voler({ x: n.x, y: n.y, k: Math.max(e.camera.k, 1.3) })
     },
     [g, voler],
   )
@@ -174,10 +189,10 @@ export function Constellation({ donnees }: { donnees: DonneesCarte }) {
       const e = etat.current
       if (!e) return
       setSelection(null)
-      const ns = g.noeuds.filter((n) => n.domaine === slug)
-      voler(cadrer(boite(ns), e.largeur, e.hauteur, 90))
+      const z = e.disposition.zones.get(slug)
+      if (z) voler(cadrer(z, e.largeur - (e.largeur >= 640 ? 260 : 0), e.hauteur, 40))
     },
-    [g, voler],
+    [voler],
   )
 
   const zoomer = useCallback(
@@ -210,17 +225,8 @@ export function Constellation({ donnees }: { donnees: DonneesCarte }) {
       const e = etat.current
       if (!e) return null
       const p = versCarte(e.camera, e.largeur, e.hauteur, sx, sy)
-      let meilleur: NoeudGraphe | null = null
-      let dMin = Infinity
-      for (const n of g.noeuds) {
-        const d = Math.hypot(n.x - p.x, n.y - p.y)
-        const tolerance = Math.max(rayonNoeud(n) + 4, 14 / e.camera.k)
-        if (d < tolerance && d < dMin) {
-          dMin = d
-          meilleur = n
-        }
-      }
-      return meilleur
+      const slug = sousLePoint(e.disposition, p.x, p.y)
+      return slug ? (g.parSlug.get(slug) ?? null) : null
     },
     [g],
   )
@@ -403,6 +409,18 @@ export function Constellation({ donnees }: { donnees: DonneesCarte }) {
   )
 }
 
+function pos(d: DispositionCarte, slug: string, defaut: { x: number; y: number }) {
+  const b = d.cartes.get(slug)
+  return b ? { x: b.x, y: b.y } : { x: defaut.x, y: defaut.y }
+}
+
+function union(zs: { minX: number; minY: number; maxX: number; maxY: number }[]) {
+  return zs.reduce(
+    (b, z) => ({ minX: Math.min(b.minX, z.minX), minY: Math.min(b.minY, z.minY), maxX: Math.max(b.maxX, z.maxX), maxY: Math.max(b.maxY, z.maxY) }),
+    { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
+  )
+}
+
 function boite(ns: { x: number; y: number }[]) {
   return ns.reduce(
     (b, n) => ({ minX: Math.min(b.minX, n.x), minY: Math.min(b.minY, n.y), maxX: Math.max(b.maxX, n.x), maxY: Math.max(b.maxY, n.y) }),
@@ -413,6 +431,6 @@ function boite(ns: { x: number; y: number }[]) {
 /** Toute la carte, décalée à droite sur grand écran pour ne pas passer sous la légende. */
 function vueEnsemble(b: ReturnType<typeof boite>, l: number, h: number): Camera {
   const legende = l >= 640 ? 260 : 0
-  const c = cadrer(b, l - legende, h, 30)
+  const c = cadrer(b, l - legende, h, 20)
   return { ...c, x: c.x - legende / 2 / c.k }
 }

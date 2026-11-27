@@ -31,9 +31,11 @@ Variables d'environnement de l'API : `MONGO_URL`, `MONGO_DB` (défaut `3datr`), 
 
 ## Carte des concepts
 
-L'accueil (`/`) est un canevas infini (glisser, molette, pincer) sur fond de grille, où chaque domaine est un cadre
-coloré qui regroupe ses concepts. Les étiquettes se placent autour de leur nœud sans jamais se chevaucher. Les positions viennent de `graph.json` (calculées par `pnpm contenu:compiler`, les domaines liés se rapprochent).
-Survoler un concept allume le chemin de ses prérequis ; cliquer ouvre sa fiche. Le code vit dans `apps/web/src/carte/`.
+L'accueil (`/`) est une carte mentale sur canevas infini (glisser, molette, pincer) : chaque domaine a son titre
+au centre et ses concepts en cartes reliées en arbre (chaque concept est rattaché à son prérequis le plus avancé du
+domaine). Les liens de prérequis complets n'apparaissent qu'au survol ; cliquer ouvre la fiche. La disposition est
+calculée dans le navigateur (`apps/web/src/carte/disposition.ts`), à partir des mesures réelles du texte, et
+garantit qu'aucune carte n'en recouvre une autre.
 La liste texte des concepts est sur `/concepts`.
 
 ## Pages concept

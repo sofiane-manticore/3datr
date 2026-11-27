@@ -163,22 +163,18 @@ function Legende({ g, onDomaine, onSurvolDomaine, domaineSurvole }: Props) {
           </li>
         ))}
       </ul>
-      <div className="mt-2 hidden space-y-1 border-t border-bord px-1.5 pt-2 text-xs text-doux sm:block">
+      <div className="mt-2 hidden space-y-1.5 border-t border-bord px-1.5 pt-2 text-xs text-doux sm:block">
         <div className="flex items-center gap-2">
-          <svg width="26" height="8" aria-hidden="true"><path d="M1 4h19" stroke="currentColor" strokeWidth="1.4" /><path d="M25 4l-6-3v6z" fill="currentColor" /></svg>
-          prérequis → suite
+          <svg width="22" height="8" aria-hidden="true"><path d="M1 4h20" stroke="currentColor" strokeWidth="1.3" strokeDasharray="3 3" /></svg>
+          se construit sur
         </div>
         <div className="flex items-center gap-2">
-          <svg width="26" height="8" aria-hidden="true"><path d="M1 4h24" stroke="currentColor" strokeWidth="1.4" strokeDasharray="3 3" /></svg>
-          alternative
+          <svg width="22" height="8" aria-hidden="true"><path d="M1 4h15" stroke="var(--accent)" strokeWidth="1.6" /><path d="M21 4l-6-3v6z" fill="var(--accent)" /></svg>
+          prérequis (au survol)
         </div>
         <div className="flex items-center gap-2">
-          <svg width="26" height="12" aria-hidden="true"><circle cx="13" cy="6" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.6" /></svg>
-          à découvrir
-        </div>
-        <div className="flex items-center gap-2">
-          <svg width="26" height="12" aria-hidden="true"><circle cx="13" cy="6" r="5.5" fill="currentColor" /><path d="m10.6 6.1 1.6 1.6 3.2-3.3" fill="none" stroke="var(--fond)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          déjà vu
+          <svg width="22" height="14" aria-hidden="true"><circle cx="11" cy="7" r="6" fill="currentColor" /><path d="m8.4 7.1 1.8 1.8 3.4-3.5" fill="none" stroke="var(--fond)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          concept déjà vu
         </div>
       </div>
       <Link to="/concepts" className="mt-1 block px-1.5 py-1 text-xs text-doux underline-offset-4 hover:text-texte hover:underline">

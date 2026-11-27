@@ -47,3 +47,33 @@ describe('graphe de la carte', () => {
     expect(rechercher(g.noeuds, 'prôduit').map((x) => x.slug)).toEqual(['produit-scalaire'])
   })
 })
+
+describe('disposition en carte mentale', () => {
+  it('coupe un titre en lignes qui tiennent dans la largeur', async () => {
+    const { couper } = await import('../src/carte/disposition')
+    const mesure = (t: string) => t.length * 7
+    const lignes = couper('Produit scalaire et projection sur un axe', 120, mesure)
+    expect(lignes.every((l) => mesure(l) <= 120)).toBe(true)
+    expect(lignes.join(' ')).toBe('Produit scalaire et projection sur un axe')
+  })
+
+  it('ne superpose aucune carte et rattache chaque concept à un seul parent', async () => {
+    const { disposerCarte } = await import('../src/carte/disposition')
+    const noeuds = Array.from({ length: 12 }, (_, i) => ({ ...n(`c${i}`), titre: `Concept numéro ${i} au titre assez long` }))
+    const liens = noeuds.slice(1).map((x, i) => ({ from: `c${Math.floor(i / 2)}`, to: x.slug, type: 'prerequis' as const }))
+    const d = disposerCarte(
+      { domaines: [{ slug: 'd', titre: 'Domaine', couleur: '#ffffff', x: 0, y: 0 }], noeuds, liens },
+      (t) => t.length * 7,
+      'sans-serif',
+    )
+    expect(d.aretes).toHaveLength(12)
+    const blocs = [...d.cartes.values(), ...d.titres.values()]
+    for (let i = 0; i < blocs.length; i++)
+      for (let j = i + 1; j < blocs.length; j++) {
+        const a = blocs[i]!
+        const b = blocs[j]!
+        const recouvre = Math.abs(a.x - b.x) < (a.w + b.w) / 2 && Math.abs(a.y - b.y) < (a.h + b.h) / 2
+        expect(recouvre).toBe(false)
+      }
+  })
+})

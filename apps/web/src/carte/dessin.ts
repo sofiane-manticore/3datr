@@ -1,6 +1,6 @@
-import type { NoeudGraphe } from '@3datr/core'
-import { type Camera, versEcran } from './camera'
-import { type GrapheCarte, rayonNoeud } from './graphe'
+import type { Camera } from './camera'
+import { type Bloc, type DispositionCarte, TEXTE_CARTE, TEXTE_TITRE } from './disposition'
+import type { GrapheCarte } from './graphe'
 
 /** Couleurs du thème, lues dans les variables CSS pour que la carte suive le thème clair ou sombre. */
 export interface Palette {
@@ -44,10 +44,10 @@ export interface EtatDessin {
   hauteur: number
   dpr: number
   palette: Palette
+  disposition: DispositionCarte
   focus: Focus | null
   domaineSurvole: string | null
   vus: Set<string>
-  /** Temps en secondes, pour le petit point qui parcourt le chemin vers le concept visé. */
   t: number
   mouvementReduit: boolean
 }
@@ -58,336 +58,179 @@ export function avecAlpha(hex: string, a: number): string {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
 }
 
-const lisse = (a: number, b: number, v: number) => {
-  const t = Math.min(1, Math.max(0, (v - a) / (b - a)))
-  return t * t * (3 - 2 * t)
-}
-
-interface Boite {
-  x0: number
-  y0: number
-  x1: number
-  y1: number
-}
-const chevauche = (a: Boite, b: Boite) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0
-
-/** Point de contrôle d'un lien courbe : léger arc, toujours du même côté pour un rendu régulier. */
-function controle(ax: number, ay: number, bx: number, by: number) {
-  return { x: (ax + bx) / 2 - (by - ay) * 0.12, y: (ay + by) / 2 + (bx - ax) * 0.12 }
+/** Point où le segment centre → (x, y) sort du rectangle : les traits partent du bord des cartes. */
+function bord(b: Bloc, x: number, y: number, marge = 0) {
+  const dx = x - b.x
+  const dy = y - b.y
+  if (dx === 0 && dy === 0) return { x: b.x, y: b.y }
+  const t = Math.min((b.w / 2 + marge) / Math.abs(dx || 1e-9), (b.h / 2 + marge) / Math.abs(dy || 1e-9))
+  return { x: b.x + dx * Math.min(1, t), y: b.y + dy * Math.min(1, t) }
 }
 
 export function dessiner(ctx: CanvasRenderingContext2D, g: GrapheCarte, e: EtatDessin) {
-  const { camera: cam, largeur: L, hauteur: H, palette: P, focus } = e
+  const { camera: cam, largeur: L, hauteur: H, palette: P, focus, disposition: D } = e
   ctx.setTransform(e.dpr, 0, 0, e.dpr, 0, 0)
-  ctx.clearRect(0, 0, L, H)
+  ctx.fillStyle = P.fond
+  ctx.fillRect(0, 0, L, H)
 
-  dessinerGrille(ctx, e)
+  // On dessine en coordonnées de la carte : tout (cartes, textes, traits) suit le zoom, comme sur un tableau blanc.
+  ctx.setTransform(e.dpr * cam.k, 0, 0, e.dpr * cam.k, e.dpr * (L / 2 - cam.x * cam.k), e.dpr * (H / 2 - cam.y * cam.k))
+  const px = 1 / cam.k // un pixel écran, en unités de la carte
+  const vue = { x0: cam.x - L / 2 / cam.k, y0: cam.y - H / 2 / cam.k, x1: cam.x + L / 2 / cam.k, y1: cam.y + H / 2 / cam.k }
+  const visible = (b: { x: number; y: number; w: number; h: number }) =>
+    b.x + b.w / 2 > vue.x0 && b.x - b.w / 2 < vue.x1 && b.y + b.h / 2 > vue.y0 && b.y - b.h / 2 < vue.y1
 
-  const ecran = (x: number, y: number) => versEcran(cam, L, H, x, y)
-  const couleurDomaine = new Map(g.domaines.map((d) => [d.slug, d.couleur]))
+  const couleur = new Map(g.domaines.map((d) => [d.slug, d.couleur]))
   const dansFocus = (s: string) => !focus || s === focus.slug || focus.chemin.has(s) || focus.suites.has(s)
+  const blocDe = (id: string) => (id.startsWith('#') ? D.titres.get(id.slice(1))! : D.cartes.get(id)!)
 
-  // Zones de domaine : un cadre arrondi, teinté très légèrement.
-  for (const d of g.domaines) {
-    const c = g.cadres.get(d.slug)!
-    const a = ecran(c.minX, c.minY)
-    const b = ecran(c.maxX, c.maxY)
-    if (b.x < 0 || a.x > L || b.y < 0 || a.y > H) continue
-    const survole = e.domaineSurvole === d.slug
-    const att = focus ? 0.5 : 1
-    ctx.beginPath()
-    ctx.roundRect(a.x, a.y, b.x - a.x, b.y - a.y, Math.min(24, 18 * cam.k + 6))
-    ctx.fillStyle = avecAlpha(d.couleur, (P.sombre ? 0.05 : 0.06) * att * (survole ? 2.2 : 1))
-    ctx.fill()
-    ctx.lineWidth = survole ? 1.5 : 1
-    ctx.strokeStyle = avecAlpha(d.couleur, (survole ? 0.7 : 0.28) * att)
-    ctx.stroke()
-  }
-
-  // Liens : courbes fines et neutres. Le chemin vers le concept visé passe à la couleur d'accent.
-  const detail = lisse(0.7, 1.3, cam.k)
+  // Arbre de chaque domaine : traits pointillés courts et discrets.
   ctx.lineCap = 'round'
-  for (const l of g.liens) {
-    const a = g.parSlug.get(l.from)
-    const b = g.parSlug.get(l.to)
-    if (!a || !b) continue
-    const pa = ecran(a.x, a.y)
-    const pb = ecran(b.x, b.y)
-    if (Math.max(pa.x, pb.x) < 0 || Math.min(pa.x, pb.x) > L || Math.max(pa.y, pb.y) < 0 || Math.min(pa.y, pb.y) > H) continue
-
-    const versCible =
-      !!focus && l.type !== 'alternative' && (l.to === focus.slug || focus.chemin.has(l.to)) && (l.from === focus.slug || focus.chemin.has(l.from))
-    const versSuite = !!focus && l.type !== 'alternative' && l.from === focus.slug && focus.suites.has(l.to)
-    let couleur = P.doux
-    let alpha: number
-    let epaisseur = 1
-    if (versCible) {
-      couleur = P.accent
-      alpha = 0.95
-      epaisseur = 2
-    } else if (versSuite) {
-      couleur = P.suite
-      alpha = 0.9
-      epaisseur = 1.6
-    } else if (focus) alpha = 0.06
-    else if (a.domaine === b.domaine) {
-      couleur = couleurDomaine.get(a.domaine)!
-      alpha = 0.35 + 0.15 * detail
-    } else alpha = 0.13 - 0.07 * detail
-
-    const c = controle(pa.x, pa.y, pb.x, pb.y)
-    ctx.strokeStyle = avecAlpha(couleur, alpha)
-    ctx.lineWidth = epaisseur
-    ctx.setLineDash(l.type === 'alternative' ? [3, 4] : [])
+  ctx.setLineDash([3 * Math.max(1, px), 4 * Math.max(1, px)])
+  ctx.lineWidth = Math.max(1.1, 1.1 * px)
+  for (const a of D.aretes) {
+    const pa = blocDe(a.de)
+    const pb = blocDe(a.vers)
+    const da = bord(pa, pb.x, pb.y, 4)
+    const db = bord(pb, pa.x, pa.y, 4)
+    if (Math.max(da.x, db.x) < vue.x0 || Math.min(da.x, db.x) > vue.x1 || Math.max(da.y, db.y) < vue.y0 || Math.min(da.y, db.y) > vue.y1) continue
+    const actif = !focus || (dansFocus(a.vers) && (a.de.startsWith('#') || dansFocus(a.de)))
+    ctx.strokeStyle = avecAlpha(P.doux, (focus ? (actif ? 0.45 : 0.12) : 0.5) * (e.domaineSurvole && e.domaineSurvole !== a.domaine ? 0.4 : 1))
     ctx.beginPath()
-    ctx.moveTo(pa.x, pa.y)
-    ctx.quadraticCurveTo(c.x, c.y, pb.x, pb.y)
+    ctx.moveTo(da.x, da.y)
+    ctx.lineTo(db.x, db.y)
     ctx.stroke()
-
-    // Petit point qui avance le long du chemin, du prérequis vers la suite.
-    if (versCible && !e.mouvementReduit) {
-      const t = (e.t * 0.6 + (l.from.length % 7) / 7) % 1
-      const u = 1 - t
-      const x = u * u * pa.x + 2 * u * t * c.x + t * t * pb.x
-      const y = u * u * pa.y + 2 * u * t * c.y + t * t * pb.y
-      ctx.fillStyle = P.accent
-      ctx.beginPath()
-      ctx.arc(x, y, 2.5, 0, Math.PI * 2)
-      ctx.fill()
-    }
-
-    // Pointe de flèche à l'arrivée, orientée selon la tangente de la courbe.
-    const montrer = versCible || versSuite || (!focus && detail > 0)
-    if (l.type !== 'alternative' && montrer) {
-      const d = Math.hypot(pb.x - c.x, pb.y - c.y)
-      const rb = Math.max(2.5, rayonNoeud(b) * cam.k) + 2.5
-      if (Math.hypot(pb.x - pa.x, pb.y - pa.y) > rb + 10 && d > 0) {
-        const ux = (pb.x - c.x) / d
-        const uy = (pb.y - c.y) / d
-        const tx = pb.x - ux * rb
-        const ty = pb.y - uy * rb
-        const t = 4 + epaisseur
-        ctx.setLineDash([])
-        ctx.fillStyle = avecAlpha(couleur, versCible || versSuite ? alpha : alpha * detail * 1.6)
-        ctx.beginPath()
-        ctx.moveTo(tx, ty)
-        ctx.lineTo(tx - ux * t - uy * t * 0.5, ty - uy * t + ux * t * 0.5)
-        ctx.lineTo(tx - ux * t + uy * t * 0.5, ty - uy * t - ux * t * 0.5)
-        ctx.closePath()
-        ctx.fill()
-      }
-    }
   }
   ctx.setLineDash([])
 
-  // Nœuds : cercles nets. Pas encore vu : anneau de couleur ; déjà vu : plein, avec une coche.
-  const obstacles: Boite[] = []
-  for (const n of g.noeuds) {
-    const p = ecran(n.x, n.y)
-    const rv = Math.max(2.5, rayonNoeud(n) * cam.k)
-    if (p.x + rv < -20 || p.x - rv > L + 20 || p.y + rv < -20 || p.y - rv > H + 20) continue
-    obstacles.push({ x0: p.x - rv - 2, y0: p.y - rv - 2, x1: p.x + rv + 2, y1: p.y + rv + 2 })
-    const coul = couleurDomaine.get(n.domaine) ?? '#888888'
-    const vu = e.vus.has(n.slug)
-    const cible = focus?.slug === n.slug
-    ctx.globalAlpha = dansFocus(n.slug) ? 1 : 0.2
-
-    if (cible) {
-      ctx.fillStyle = avecAlpha(P.accent, 0.18)
+  // Au survol seulement : les vrais liens de prérequis (chemin complet) et les suites directes.
+  if (focus) {
+    for (const l of g.liens) {
+      if (l.type === 'alternative') continue
+      const versCible = (l.to === focus.slug || focus.chemin.has(l.to)) && focus.chemin.has(l.from)
+      const versSuite = l.from === focus.slug && focus.suites.has(l.to)
+      if (!versCible && !versSuite) continue
+      const a = D.cartes.get(l.from)
+      const b = D.cartes.get(l.to)
+      if (!a || !b) continue
+      const da = bord(a, b.x, b.y, 2)
+      const db = bord(b, a.x, a.y, 4)
+      const c = { x: (da.x + db.x) / 2 - (db.y - da.y) * 0.15, y: (da.y + db.y) / 2 + (db.x - da.x) * 0.15 }
+      const coul = versSuite ? P.suite : P.accent
+      ctx.strokeStyle = avecAlpha(coul, 0.9)
+      ctx.lineWidth = Math.max(1.6, 1.6 * px)
       ctx.beginPath()
-      ctx.arc(p.x, p.y, rv + 7, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    ctx.beginPath()
-    ctx.arc(p.x, p.y, rv, 0, Math.PI * 2)
-    if (vu || rv < 4) {
-      ctx.fillStyle = coul
-      ctx.fill()
-    } else {
-      ctx.fillStyle = P.fond
-      ctx.fill()
-      ctx.lineWidth = Math.max(1.5, Math.min(3, rv * 0.28))
-      ctx.strokeStyle = coul
+      ctx.moveTo(da.x, da.y)
+      ctx.quadraticCurveTo(c.x, c.y, db.x, db.y)
       ctx.stroke()
-      ctx.fillStyle = avecAlpha(coul, 0.18)
+      // Pointe de flèche.
+      const d = Math.hypot(db.x - c.x, db.y - c.y) || 1
+      const ux = (db.x - c.x) / d
+      const uy = (db.y - c.y) / d
+      const t = Math.max(7, 7 * px)
+      ctx.fillStyle = coul
+      ctx.beginPath()
+      ctx.moveTo(db.x, db.y)
+      ctx.lineTo(db.x - ux * t - uy * t * 0.5, db.y - uy * t + ux * t * 0.5)
+      ctx.lineTo(db.x - ux * t + uy * t * 0.5, db.y - uy * t - ux * t * 0.5)
+      ctx.closePath()
       ctx.fill()
     }
-    if (vu && rv >= 6) {
-      ctx.strokeStyle = '#ffffff'
-      ctx.lineWidth = Math.max(1.5, rv * 0.18)
+  }
+
+  // Cartes des concepts.
+  const lisible = TEXTE_CARTE.taille * cam.k >= 7.5
+  for (const n of g.noeuds) {
+    const b = D.cartes.get(n.slug)
+    if (!b || !visible(b)) continue
+    const coul = couleur.get(n.domaine) ?? '#888888'
+    const cible = focus?.slug === n.slug
+    const chemin = focus?.chemin.has(n.slug)
+    const suite = focus?.suites.has(n.slug)
+    const vu = e.vus.has(n.slug)
+    const x = b.x - b.w / 2
+    const y = b.y - b.h / 2
+    ctx.globalAlpha = dansFocus(n.slug) && (!e.domaineSurvole || e.domaineSurvole === n.domaine) ? 1 : 0.28
+
+    ctx.beginPath()
+    ctx.roundRect(x, y, b.w, b.h, 8)
+    ctx.fillStyle = P.surface
+    ctx.fill()
+    ctx.lineWidth = cible ? Math.max(2, 2 * px) : Math.max(1, px)
+    ctx.strokeStyle = cible || chemin ? P.accent : suite ? P.suite : vu ? avecAlpha(coul, 0.8) : P.bord
+    ctx.stroke()
+
+    // Repère de couleur du domaine, à gauche.
+    ctx.fillStyle = coul
+    ctx.beginPath()
+    ctx.roundRect(x + 6, y + 7, 3, b.h - 14, 1.5)
+    ctx.fill()
+
+    if (lisible) {
+      ctx.fillStyle = P.texte
+      ctx.font = `500 ${TEXTE_CARTE.taille}px ${P.police}`
+      ctx.textBaseline = 'middle'
+      ctx.textAlign = 'left'
+      b.lignes.forEach((l, i) => ctx.fillText(l, x + TEXTE_CARTE.padX, y + TEXTE_CARTE.padY + TEXTE_CARTE.interligne * (i + 0.5)))
+    } else {
+      // De loin, des barres grises remplacent le texte : la forme reste lisible sans bruit.
+      ctx.fillStyle = avecAlpha(P.doux, 0.35)
+      b.lignes.forEach((l, i) => {
+        const lw = Math.min(b.w - TEXTE_CARTE.padX * 2, l.length * 6.5)
+        ctx.fillRect(x + TEXTE_CARTE.padX, y + TEXTE_CARTE.padY + TEXTE_CARTE.interligne * i + 5, lw, 6)
+      })
+    }
+
+    if (vu) {
+      // Petite coche dans le coin.
+      const cx = x + b.w - 2
+      const cy = y + 2
+      ctx.fillStyle = coul
+      ctx.beginPath()
+      ctx.arc(cx, cy, 7, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = P.fond
+      ctx.lineWidth = 1.8
       ctx.lineJoin = 'round'
       ctx.beginPath()
-      ctx.moveTo(p.x - rv * 0.38, p.y + rv * 0.02)
-      ctx.lineTo(p.x - rv * 0.1, p.y + rv * 0.3)
-      ctx.lineTo(p.x + rv * 0.4, p.y - rv * 0.28)
-      ctx.stroke()
-    }
-    if (cible) {
-      ctx.lineWidth = 2
-      ctx.strokeStyle = P.accent
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, rv + 3.5, 0, Math.PI * 2)
+      ctx.moveTo(cx - 3.2, cy)
+      ctx.lineTo(cx - 0.8, cy + 2.4)
+      ctx.lineTo(cx + 3.4, cy - 2.4)
       ctx.stroke()
     }
     ctx.globalAlpha = 1
   }
 
-  dessinerEtiquettes(ctx, g, e, ecran, dansFocus, obstacles)
-}
-
-/** Grille de points discrète, en coordonnées de la carte : elle suit le déplacement et le zoom. */
-function dessinerGrille(ctx: CanvasRenderingContext2D, e: EtatDessin) {
-  const { camera: cam, largeur: L, hauteur: H, palette: P } = e
-  // Pas de grille en puissances de 2, choisi pour rester entre 18 et 36 px à l'écran.
-  let pas = 40
-  while (pas * cam.k < 18) pas *= 2
-  while (pas * cam.k > 36) pas /= 2
-  const px = pas * cam.k
-  const ox = ((((-cam.x * cam.k + L / 2) % px) + px) % px)
-  const oy = ((((-cam.y * cam.k + H / 2) % px) + px) % px)
-  ctx.fillStyle = avecAlpha(P.doux, P.sombre ? 0.16 : 0.22)
-  for (let x = ox; x < L; x += px) for (let y = oy; y < H; y += px) ctx.fillRect(x - 0.75, y - 0.75, 1.5, 1.5)
-}
-
-/**
- * Zoom sémantique et placement sans chevauchement. De loin, les noms des domaines au centre
- * de leur cadre ; de près, un en-tête dans le coin du cadre et les noms des concepts. Chaque
- * étiquette essaie huit places autour de son nœud (dessous, dessus, côtés, diagonales) et
- * n'est affichée que si elle ne touche ni une autre étiquette ni un nœud.
- */
-function dessinerEtiquettes(
-  ctx: CanvasRenderingContext2D,
-  g: GrapheCarte,
-  e: EtatDessin,
-  ecran: (x: number, y: number) => { x: number; y: number },
-  dansFocus: (s: string) => boolean,
-  obstacles: Boite[],
-) {
-  const { camera: cam, palette: P, focus, largeur: L, hauteur: H } = e
-  ctx.textBaseline = 'middle'
-  const pris: Boite[] = []
-  const pres = lisse(0.55, 0.85, cam.k)
-
-  // En-têtes de domaine (de près) : pastille de couleur + nom, dans le coin haut gauche du cadre.
-  if (pres > 0.02) {
-    for (const d of g.domaines) {
-      const c = g.cadres.get(d.slug)!
-      const a = ecran(c.minX, c.minY)
-      const largeurCadre = (c.maxX - c.minX) * cam.k
-      ctx.font = `600 12px ${P.police}`
-      let titre = d.titre
-      while (ctx.measureText(titre).width > largeurCadre - 40 && titre.includes(' ')) titre = `${titre.slice(0, titre.lastIndexOf(' '))}…`
-      const lt = ctx.measureText(titre).width
-      const x = a.x + 14
-      const y = a.y + 16
-      ctx.globalAlpha = pres * (focus ? 0.5 : 1)
-      ctx.fillStyle = d.couleur
-      ctx.beginPath()
-      ctx.arc(x + 4, y, 4, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.fillStyle = P.texte
-      ctx.textAlign = 'left'
-      ctx.fillText(titre, x + 14, y)
-      pris.push({ x0: x - 2, y0: y - 9, x1: x + 16 + lt, y1: y + 9 })
-    }
-  }
-
-  // Noms des domaines (de loin) : centrés, taille qui suit le zoom, jamais superposés.
-  if (pres < 0.98) {
-    ctx.textAlign = 'center'
-    const ordre = [...g.domaines].sort((a, b) => (g.rayons.get(b.slug) ?? 0) - (g.rayons.get(a.slug) ?? 0))
-    for (const d of ordre) {
-      const ctr = g.centres.get(d.slug)!
-      const p = ecran(ctr.x, ctr.y)
-      const taille = Math.round(Math.min(20, Math.max(11, 34 * cam.k)))
-      ctx.font = `650 ${taille}px ${P.police}`
-      // Le titre complet s'il tient, sinon sa première partie.
-      let titre = d.titre
-      let lt = ctx.measureText(titre).width
-      const largeurCadre = (g.cadres.get(d.slug)!.maxX - g.cadres.get(d.slug)!.minX) * cam.k
-      if (lt > largeurCadre * 1.1) {
-        titre = titreCourt(d.titre)
-        lt = ctx.measureText(titre).width
-      }
-      const b = { x0: p.x - lt / 2 - 10, y0: p.y - taille / 2 - 6, x1: p.x + lt / 2 + 10, y1: p.y + taille / 2 + 6 }
-      if (pris.some((q) => chevauche(q, b))) continue
-      pris.push(b)
-      ctx.globalAlpha = (1 - pres) * (focus ? 0.5 : 1)
-      ctx.fillStyle = avecAlpha(P.fond, 0.82)
-      ctx.beginPath()
-      ctx.roundRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0, 999)
-      ctx.fill()
-      ctx.strokeStyle = avecAlpha(d.couleur, 0.6)
-      ctx.lineWidth = 1
-      ctx.stroke()
-      ctx.fillStyle = P.texte
-      ctx.fillText(titre, p.x, p.y + 0.5)
-    }
-  }
-  ctx.globalAlpha = 1
-
-  // Concepts : le focus et son chemin d'abord, puis les plus « porteurs ».
-  const seuil = cam.k < 0.75 ? Infinity : cam.k < 1.05 ? 4 : cam.k < 1.4 ? 1 : -1
-  const candidats: NoeudGraphe[] = []
-  for (const n of g.noeuds) {
-    const prioritaire = focus && (n.slug === focus.slug || focus.chemin.has(n.slug) || focus.suites.has(n.slug))
-    if (prioritaire || n.poids > seuil) candidats.push(n)
-  }
-  const rang = (n: NoeudGraphe) =>
-    focus?.slug === n.slug ? -100 : focus?.chemin.has(n.slug) ? -50 : focus?.suites.has(n.slug) ? -40 : -n.poids
-  candidats.sort((a, b) => rang(a) - rang(b))
-
-  const taille = 12
-  const hauteur = 20
-  ctx.textAlign = 'center'
-  for (const n of candidats) {
-    const p = ecran(n.x, n.y)
-    if (p.x < -150 || p.x > L + 150 || p.y < -40 || p.y > H + 40) continue
-    const cible = focus?.slug === n.slug
-    ctx.font = `${cible ? 650 : 500} ${taille}px ${P.police}`
-    const larg = ctx.measureText(n.titre).width + 14
-    const rv = Math.max(2.5, rayonNoeud(n) * cam.k) + (cible ? 6 : 4)
-    // Places possibles, dans l'ordre de préférence.
-    const places = [
-      { x: p.x, y: p.y + rv + hauteur / 2 },
-      { x: p.x, y: p.y - rv - hauteur / 2 },
-      { x: p.x + rv + larg / 2, y: p.y },
-      { x: p.x - rv - larg / 2, y: p.y },
-      { x: p.x + rv * 0.7 + larg / 2, y: p.y + rv * 0.7 + hauteur / 2 },
-      { x: p.x - rv * 0.7 - larg / 2, y: p.y + rv * 0.7 + hauteur / 2 },
-      { x: p.x + rv * 0.7 + larg / 2, y: p.y - rv * 0.7 - hauteur / 2 },
-      { x: p.x - rv * 0.7 - larg / 2, y: p.y - rv * 0.7 - hauteur / 2 },
-    ]
-    let choisie: Boite | null = null
-    for (const pl of places) {
-      const b = { x0: pl.x - larg / 2, y0: pl.y - hauteur / 2, x1: pl.x + larg / 2, y1: pl.y + hauteur / 2 }
-      if (pris.some((q) => chevauche(q, b)) || obstacles.some((q) => chevauche(q, b))) continue
-      choisie = b
-      break
-    }
-    if (!choisie) {
-      if (!cible) continue
-      choisie = { x0: places[0]!.x - larg / 2, y0: places[0]!.y - hauteur / 2, x1: places[0]!.x + larg / 2, y1: places[0]!.y + hauteur / 2 }
-    }
-    pris.push(choisie)
-    const actif = dansFocus(n.slug)
-    ctx.globalAlpha = actif ? 1 : 0.3
+  // Titres des domaines : texte gras, posé sur un fond uni. De loin, ils grossissent pour rester lisibles.
+  const echelle = Math.max(1, (L < 640 ? 10.5 : 13) / (TEXTE_TITRE.taille * cam.k))
+  for (const d of g.domaines) {
+    const t = D.titres.get(d.slug)!
+    const w = t.w * echelle
+    const h = t.h * echelle
+    if (!visible({ x: t.x, y: t.y, w, h })) continue
+    const survole = e.domaineSurvole === d.slug
+    ctx.globalAlpha = focus || (e.domaineSurvole && !survole) ? 0.45 : 1
     ctx.beginPath()
-    ctx.roundRect(choisie.x0, choisie.y0, choisie.x1 - choisie.x0, hauteur, 6)
-    ctx.fillStyle = cible ? P.accent : avecAlpha(P.surface, 0.92)
+    ctx.roundRect(t.x - w / 2, t.y - h / 2, w, h, 10 * echelle)
+    ctx.fillStyle = survole ? avecAlpha(d.couleur, P.sombre ? 0.22 : 0.16) : P.fond
     ctx.fill()
-    if (!cible) {
-      ctx.strokeStyle = focus?.chemin.has(n.slug) ? avecAlpha(P.accent, 0.7) : focus?.suites.has(n.slug) ? avecAlpha(P.suite, 0.7) : P.bord
-      ctx.lineWidth = 1
-      ctx.stroke()
-    }
-    ctx.fillStyle = cible ? P.fond : P.texte
-    ctx.fillText(n.titre, (choisie.x0 + choisie.x1) / 2, choisie.y0 + hauteur / 2 + 0.5)
+    ctx.lineWidth = Math.max(1.5, 1.5 * px)
+    ctx.strokeStyle = avecAlpha(d.couleur, 0.9)
+    ctx.stroke()
+    ctx.fillStyle = P.texte
+    ctx.font = `650 ${TEXTE_TITRE.taille * echelle}px ${P.police}`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    t.lignes.forEach((l, i) =>
+      ctx.fillText(l, t.x, t.y - h / 2 + (TEXTE_TITRE.padY + TEXTE_TITRE.interligne * (i + 0.5)) * echelle),
+    )
+    ctx.globalAlpha = 1
   }
-  ctx.globalAlpha = 1
 }
 
-/** « Transformations et espaces de coordonnées » devient « Transformations ». */
-function titreCourt(t: string) {
-  return t.split(/,| et /)[0]!.trim()
+/** Le bloc (carte ou titre) sous un point de la carte. */
+export function sousLePoint(D: DispositionCarte, x: number, y: number): string | null {
+  for (const [slug, b] of D.cartes) if (Math.abs(x - b.x) <= b.w / 2 && Math.abs(y - b.y) <= b.h / 2) return slug
+  return null
 }
+
