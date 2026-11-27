@@ -53,6 +53,9 @@ export function Layout({ children }: { children: ReactNode }) {
         <footer className={`mt-24 border-t border-bord ${pleinEcran ? 'hidden' : ''}`}>
           <div className="mx-auto max-w-6xl px-4 py-6 text-xs text-doux">
             3DATR · 3D Artist Tools Reminder · les maths et techniques des artistes 3D, un module interactif par concept.
+            <Link to="/labo" className="ml-2 underline-offset-4 hover:text-texte hover:underline">
+              Labo des modules
+            </Link>
           </div>
         </footer>
         <ScrollRestoration />

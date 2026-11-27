@@ -1,11 +1,11 @@
-import type { ComponentType } from 'react'
+import type { ComposantModule } from '../briques/types'
 
 /**
  * Registre des modules interactifs : apps/web/src/modules/<Nom>.tsx ou <Nom>/index.tsx.
  * Le nom est celui du champ `module:` de la fiche. La validation du contenu vérifie
  * qu'il existe ; ici on ne fait que le charger à la demande (React.lazy).
  */
-const fichiers = import.meta.glob<{ default: ComponentType }>(['../modules/*.tsx', '../modules/*/index.tsx'])
+const fichiers = import.meta.glob<{ default: ComposantModule }>(['../modules/*.tsx', '../modules/*/index.tsx'])
 
 const parNom = new Map(
   Object.entries(fichiers).map(([chemin, charger]) => {
@@ -16,3 +16,6 @@ const parNom = new Map(
 )
 
 export const chargeurModule = (nom: string | null | undefined) => (nom ? parNom.get(nom) ?? null : null)
+
+/** Tous les modules enregistrés, par ordre alphabétique (page /labo). */
+export const nomsModules = () => [...parNom.keys()].sort()

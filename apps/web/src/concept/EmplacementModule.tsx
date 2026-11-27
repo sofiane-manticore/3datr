@@ -29,18 +29,26 @@ export function EmplacementModule() {
     )
   }
 
+  // Le module a son propre cadre (barre d'outils, vue, contrôles) ; même gabarit en attendant.
+  return monte ? (
+    <ErreurModule>
+      <Suspense fallback={<AttenteModule />}>
+        <Module />
+      </Suspense>
+    </ErreurModule>
+  ) : (
+    <AttenteModule />
+  )
+}
+
+export function AttenteModule() {
   return (
-    <Cadre>
-      {monte ? (
-        <ErreurModule>
-          <Suspense fallback={<Attente />}>
-            <Module />
-          </Suspense>
-        </ErreurModule>
-      ) : (
+    <div className="overflow-hidden rounded-xl border border-bord bg-surface">
+      <div className="h-[41px] border-b border-bord" />
+      <div className="fond-grille aspect-[4/3] sm:aspect-[16/10]">
         <Attente />
-      )}
-    </Cadre>
+      </div>
+    </div>
   )
 }
 
@@ -56,14 +64,14 @@ function Attente() {
   return <div className="flex h-full items-center justify-center text-sm text-doux">Chargement du module…</div>
 }
 
-class ErreurModule extends Component<{ children: ReactNode }, { erreur: boolean }> {
+export class ErreurModule extends Component<{ children: ReactNode }, { erreur: boolean }> {
   state = { erreur: false }
   static getDerivedStateFromError() {
     return { erreur: true }
   }
   render() {
     if (this.state.erreur)
-      return <div className="flex h-full items-center justify-center p-6 text-center text-sm text-doux">Le module n'a pas pu démarrer sur cet appareil.</div>
+      return <div className="flex aspect-[16/10] items-center justify-center rounded-xl border border-bord p-6 text-center text-sm text-doux">Le module n'a pas pu démarrer sur cet appareil.</div>
     return this.props.children
   }
 }

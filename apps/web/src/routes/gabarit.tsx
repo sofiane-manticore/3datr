@@ -19,6 +19,8 @@ export function loader() {
     ...base,
     resume: 'Mesure à quel point deux directions pointent dans le même sens.',
     nature: 'fondamental' as const,
+    // Module de démonstration de la brique « Scène vecteurs 3D » (voir /labo).
+    module: 'DotProductPlayground',
     temps: 10,
     nodes: ['Vector Math › Dot Product', 'DotProduct', 'dot()'],
     usages: ['materiaux' as const, 'stylise' as const, 'vfx' as const],

@@ -44,6 +44,39 @@ La liste texte des concepts est sur `/concepts`.
 Le gabarit (9 sections, KaTeX, onglets logiciels, puces de prérequis) vit dans `apps/web/src/concept/`,
 les modules interactifs dans `apps/web/src/modules/<Nom>.tsx`. L'API sert `apps/web/dist/client`.
 
+## Modules interactifs
+
+Chaque module est un composant `apps/web/src/modules/<Nom>.tsx` déclaré avec `defineModule`
+(`apps/web/src/briques/module.tsx`) et construit sur l'une des six briques de `apps/web/src/briques/` :
+
+| Brique | Composant | Pour |
+| --- | --- | --- |
+| Scène vecteurs 3D | `scene/Scene3D` (`Fleche`, `PointDeplacable`, `Arc`, `Trait`, `Etiquette`) | vecteurs, normales, espaces, Z-up / Y-up |
+| Traceur de courbes 2D | `traceur/TraceurCourbes` | fonctions, interpolation, seuils |
+| Aperçu de shader | `shader/ApercuShader` | GLSL sur plan, sphère, tore ou cube, erreurs à la ligne |
+| Mini éditeur de nodes | `nodes/EditeurNodes` | node tree compilé en shader (React Flow) |
+| Tableur d'attributs | `tableur/TableurAttributs` | Spreadsheet relié à la vue 3D |
+| Exécution pas à pas | `pas-a-pas/ExecutionPasAPas` + `tracer` | code, ligne active, variables |
+
+```tsx
+export default defineModule({
+  id: 'DotProductPlayground',
+  titre: 'Produit scalaire de deux directions',
+  brique: 'scene-vecteurs-3d',
+  variables: {
+    a: { type: 'vec3', defaut: [1, 0, 0], couleur: 'rouge', libelle: 'Vecteur a', symbole: 'a' },
+  },
+  presets: [{ nom: 'Opposés', valeurs: { a: [-1, 0, 0] } }],
+  defi: { texte: '…', reussi: (v) => … },
+  Vue: ({ v, set }) => <Scene3D>…</Scene3D>,
+})
+```
+
+Le module reçoit gratuitement : contrôles générés depuis les variables (la couleur d'un curseur est celle de
+`\col{rouge}{…}` dans la formule), préréglages, Réinitialiser, état dans l'URL (`?a=1,0,0`, lien Partager) et défi.
+La page `/labo` (non indexée) liste les briques et tous les modules, `/labo/<Nom>` en montre un seul.
+Pour rattacher un module à une fiche : `module: <Nom>` dans son en-tête YAML.
+
 ## Déploiement
 
 Dokploy construit le `Dockerfile` à chaque push sur `main` et publie sur 3datr.manticore-studio.fr.
