@@ -3,9 +3,12 @@
   "private": true,
   "packageManager": "pnpm@10.28.0",
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
+    "dev": "pnpm contenu:compiler && pnpm -r --parallel dev",
     "build": "pnpm -r build",
     "start": "node apps/api/dist/server.js",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm --filter @3datr/core build && pnpm -r typecheck",
+    "test": "pnpm --filter @3datr/core build && pnpm -r test",
+    "contenu:valider": "pnpm --filter @3datr/core build && pnpm --filter @3datr/content valider",
+    "contenu:compiler": "pnpm --filter @3datr/core build && pnpm --filter @3datr/content compiler"
   }
 }

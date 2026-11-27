@@ -1,0 +1,28 @@
+{
+  "name": "@3datr/content",
+  "private": true,
+  "type": "module",
+  "description": "Validation et compilation du dossier content/ en catalog.json et graph.json",
+  "bin": {
+    "3datr-content": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node dist/cli.js compiler",
+    "valider": "tsx src/cli.ts valider",
+    "compiler": "tsx src/cli.ts compiler",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@3datr/core": "workspace:*",
+    "d3-force": "^3.0.1",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/d3-force": "^3.0.10",
+    "@types/node": "^22.20.7",
+    "tsx": "^4.23.15",
+    "typescript": "~5.8.3",
+    "vitest": "^5.1.2"
+  }
+}

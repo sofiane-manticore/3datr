@@ -1,0 +1,10 @@
+slug: penser-en-code
+titre: "Penser en code"
+description: "Variables, conditions, boucles, fonctions, tableaux et récursion."
+concepts:
+  - variables-types
+  - conditions
+  - boucles
+  - fonctions
+  - tableaux-listes
+  - recursion

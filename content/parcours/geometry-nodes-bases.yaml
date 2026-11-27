@@ -1,0 +1,11 @@
+slug: geometry-nodes-bases
+titre: "Geometry Nodes, les bases"
+description: "Attributs, domaines, champs, instances, distribution de points et aléatoire."
+concepts:
+  - attributs
+  - domaines
+  - champs-fields
+  - aleatoire-graine
+  - distribution-points
+  - instances
+  - variation-instances

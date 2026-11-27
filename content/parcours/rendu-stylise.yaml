@@ -1,0 +1,9 @@
+slug: rendu-stylise
+titre: "Rendu stylisé"
+description: "Fresnel, toon ramp, contours et effets en espace écran."
+concepts:
+  - lambert
+  - fresnel
+  - toon-shading
+  - contours
+  - post-process

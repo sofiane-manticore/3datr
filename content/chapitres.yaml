@@ -1,0 +1,50 @@
+# Chapitres par domaine, dans l'ordre d'affichage (4 à 10 concepts chacun).
+vecteurs:
+  - { slug: bases-vecteurs, titre: "Les bases des vecteurs" }
+  - { slug: operations-vectorielles, titre: "Opérations vectorielles" }
+transformations:
+  - { slug: transformations-de-base, titre: "Transformations de base" }
+  - { slug: rotations, titre: "Rotations et orientation" }
+  - { slug: matrices-projections, titre: "Matrices et projections" }
+fonctions:
+  - { slug: operations-math, titre: "Les opérations mathématiques" }
+  - { slug: trigonometrie-ondes, titre: "Trigonométrie et ondes" }
+interpolation:
+  - { slug: interpolation-remapping, titre: "Interpoler et remapper" }
+  - { slug: interpolation-avancee, titre: "Interpolations avancées" }
+geometrie:
+  - { slug: maillages, titre: "Maillages" }
+  - { slug: courbes, titre: "Courbes" }
+  - { slug: requetes-geometriques, titre: "Requêtes et opérations géométriques" }
+procedural:
+  - { slug: aleatoire, titre: "Aléatoire maîtrisé" }
+  - { slug: bruits, titre: "Bruits" }
+  - { slug: generation-procedurale, titre: "Génération procédurale" }
+sdf:
+  - { slug: bases-sdf, titre: "Construire avec des SDF" }
+  - { slug: rendu-sdf, titre: "Rendre et utiliser des SDF" }
+uv-textures:
+  - { slug: coordonnees-uv, titre: "Coordonnées et projections" }
+  - { slug: textures-techniques, titre: "Techniques de textures" }
+couleur:
+  - { slug: couleur-bases, titre: "Représenter la couleur" }
+  - { slug: gestion-couleur, titre: "Gestion de la couleur" }
+  - { slug: retouche-compositing, titre: "Retouche et compositing" }
+rendu:
+  - { slug: eclairage, titre: "Éclairage" }
+  - { slug: materiaux-pbr, titre: "Matériaux physiques (PBR)" }
+  - { slug: rendu-stylise, titre: "Rendu stylisé et effets écran" }
+  - { slug: pipeline-rendu, titre: "Pipeline et performance" }
+geometry-nodes:
+  - { slug: attributs-domaines, titre: "Attributs, domaines et champs" }
+  - { slug: scatter-instances, titre: "Scatter et instances" }
+  - { slug: echantillonnage-topologie, titre: "Échantillonnage et topologie" }
+  - { slug: zones-simulation, titre: "Zones et simulation" }
+programmation:
+  - { slug: bases-programmation, titre: "Les bases de la programmation" }
+  - { slug: structuration, titre: "Structurer son code" }
+  - { slug: code-dans-les-logiciels, titre: "Coder dans Blender et Unreal" }
+  - { slug: algorithmes-performance, titre: "Algorithmes et performance" }
+animation:
+  - { slug: mouvement, titre: "Mouvement et physique" }
+  - { slug: systemes-dynamiques, titre: "Systèmes dynamiques" }

@@ -1,0 +1,40 @@
+# Les 13 domaines, dans l'ordre d'affichage. La couleur sert sur la carte et les pastilles de liens.
+- slug: vecteurs
+  titre: Vecteurs
+  couleur: "#e5484d"
+- slug: transformations
+  titre: Transformations et espaces de coordonnées
+  couleur: "#f76b15"
+- slug: fonctions
+  titre: Fonctions et trigonométrie
+  couleur: "#ffc53d"
+- slug: interpolation
+  titre: Interpolation, remapping et easing
+  couleur: "#bdee63"
+- slug: geometrie
+  titre: Géométrie, maillages et courbes
+  couleur: "#46a758"
+- slug: procedural
+  titre: Aléatoire, bruits et procédural
+  couleur: "#12a594"
+- slug: sdf
+  titre: Champs de distance (SDF)
+  couleur: "#00a2c7"
+- slug: uv-textures
+  titre: UV, textures et coordonnées de texture
+  couleur: "#3e63dd"
+- slug: couleur
+  titre: Couleur et image
+  couleur: "#8e4ec6"
+- slug: rendu
+  titre: Lumière, matériaux et rendu
+  couleur: "#d6409f"
+- slug: geometry-nodes
+  titre: Geometry Nodes et procédural géométrique
+  couleur: "#f5a623"
+- slug: programmation
+  titre: Programmation et logique
+  couleur: "#7ce2fe"
+- slug: animation
+  titre: Animation, simulation et physique
+  couleur: "#a18072"
